@@ -3,6 +3,7 @@ import type {
   MetricsSnapshot,
 } from '../types';
 import { getProducers, getConsumers, findNode } from './state';
+import { processRetryQueue } from './retry';
 
 const METRICS_MS = 1000;
 const HISTORY_CAP = 30;
@@ -15,6 +16,7 @@ export function tick(state: SimulationState, deltaMs: number): void {
 
   produceMessages(state, scaled);
   consumeMessages(state, scaled);
+  processRetryQueue(state);
   processScriptedEvents(state);
   accumulateMetrics(state, scaled);
 }
