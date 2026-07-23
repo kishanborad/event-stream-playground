@@ -59,6 +59,50 @@ npm run deploy     # Deploy to GitHub Pages
 - Vitest (unit tests)
 - GitHub Pages (hosting)
 
+## Project structure
+
+```
+src/
+  simulation/         # Core simulation engine
+    state.ts            State factory and node helpers
+    engine.ts           Tick-based simulation loop
+    retry.ts            Retry queue and DLQ logic
+    rebalance.ts        Consumer partition rebalancing
+    presets.ts          Four preset scenario configurations
+  canvas/             # Visual rendering
+    NodeGraph.tsx       Canvas component with rAF loop
+    renderer.ts         Node, connection, and particle drawing
+    layout.ts           Three-column auto-layout
+    interaction.ts      Add/remove node helpers
+  sidebar/            # Left panel
+    Sidebar.tsx         Tab container (Visual / Code / Deploy)
+    TabBar.tsx          Tab navigation
+    NodePalette.tsx     Draggable node icons
+    ControlPanel.tsx    Play/pause, speed, presets, reset
+    NodeConfigPopover.tsx  Per-node settings
+  scripting/          # Code execution
+    CodePanel.tsx       Monaco editor with Python/JS tabs
+    pyodideLoader.ts    Lazy Pyodide WASM loader
+    pythonBridge.ts     Mock kafka-python module
+    jsBridge.ts         Mock kafkajs module
+    templates.ts        Code templates per preset
+  infra/              # Infrastructure generation
+    InfraPanel.tsx      Docker/CLI preview panel
+    dockerCompose.ts    docker-compose.yml generator
+    kafkaCli.ts         Kafka CLI command generator
+  charts/             # Metrics visualization
+    ChartPanel.tsx      Four-chart container
+    MessagesPerSecChart.tsx
+    ConsumerLagChart.tsx
+    ConsumerOffsetChart.tsx
+    RetryDlqChart.tsx
+    chartUtils.ts       Canvas 2D drawing primitives
+  toolbar/
+    Toolbar.tsx         Top bar with counters
+  types.ts            # Shared TypeScript types
+  App.tsx             # Root component
+```
+
 ## Author
 
 Kishan Borad
