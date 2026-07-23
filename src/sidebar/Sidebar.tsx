@@ -4,6 +4,7 @@ import TabBar, { type SidebarTab } from './TabBar';
 import NodePalette from './NodePalette';
 import ControlPanel from './ControlPanel';
 import NodeConfigPopover from './NodeConfigPopover';
+import CodePanel from '../scripting/CodePanel';
 
 interface Props {
   stateRef: React.MutableRefObject<SimulationState>;
@@ -11,10 +12,11 @@ interface Props {
   onClearSelection: () => void;
   onPresetChange: (preset: PresetConfig) => void;
   currentPresetId: string;
+  canvasSize: { width: number; height: number };
 }
 
 export default function Sidebar({
-  stateRef, selectedNode, onClearSelection, onPresetChange, currentPresetId,
+  stateRef, selectedNode, onClearSelection, onPresetChange, currentPresetId, canvasSize,
 }: Props) {
   const [activeTab, setActiveTab] = useState<SidebarTab>('visual');
 
@@ -50,9 +52,11 @@ export default function Sidebar({
         )}
 
         {activeTab === 'code' && (
-          <div className="p-4 text-xs text-canvas-muted">
-            Code panel — Task 7
-          </div>
+          <CodePanel
+            stateRef={stateRef}
+            currentPresetId={currentPresetId}
+            canvasSize={canvasSize}
+          />
         )}
 
         {activeTab === 'deploy' && (
