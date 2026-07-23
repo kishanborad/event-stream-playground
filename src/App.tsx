@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import type { SimulationState, SimNode, PresetConfig, NodeKind } from './types';
 import { createState } from './simulation/state';
 import { PRESETS } from './simulation/presets';
@@ -12,6 +12,8 @@ export default function App() {
   const [selectedNode, setSelectedNode] = useState<SimNode | null>(null);
   const [currentPresetId, setCurrentPresetId] = useState(PRESETS[0].id);
   const [contextMenu, setContextMenu] = useState<{ node: SimNode; x: number; y: number } | null>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
 
   const handleRenderTick = useCallback(() => {
     setRenderTick(t => t + 1);
@@ -39,6 +41,22 @@ export default function App() {
     setContextMenu(null);
   }, [contextMenu, selectedNode]);
 
+  useEffect(() => {
+    const el = canvasContainerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(entries => {
+      const entry = entries[0];
+      if (entry) {
+        setCanvasSize({
+          width: entry.contentRect.width,
+          height: entry.contentRect.height,
+        });
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div
       className="flex h-screen bg-canvas-bg text-canvas-text overflow-hidden"
@@ -50,6 +68,7 @@ export default function App() {
         onClearSelection={() => setSelectedNode(null)}
         onPresetChange={handlePresetChange}
         currentPresetId={currentPresetId}
+        canvasSize={canvasSize}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -61,7 +80,7 @@ export default function App() {
             <span>Failed <span className="text-canvas-dlq font-mono ml-1">{stateRef.current.counters.failed}</span></span>
           </div>
         </div>
-        <div className="flex-1 relative bg-canvas-deep">
+        <div ref={canvasContainerRef} className="flex-1 relative bg-canvas-deep">
           <NodeGraph
             stateRef={stateRef}
             onRenderTick={handleRenderTick}
