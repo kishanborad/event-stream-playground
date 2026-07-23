@@ -5,6 +5,7 @@ import { PRESETS } from './simulation/presets';
 import { addNode, removeNode } from './canvas/interaction';
 import NodeGraph from './canvas/NodeGraph';
 import Sidebar from './sidebar/Sidebar';
+import ChartPanel from './charts/ChartPanel';
 
 export default function App() {
   const stateRef = useRef<SimulationState>(createState(PRESETS[0]));
@@ -106,15 +107,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* Charts panel placeholder — Task 7 */}
-      <div className="w-72 flex-shrink-0 bg-canvas-surface backdrop-blur-[12px] border-l border-canvas-border flex flex-col shadow-glass">
-        <div className="p-4 text-xs font-semibold tracking-widest text-canvas-accent uppercase border-b border-canvas-border">
-          Metrics
-        </div>
-        <div className="flex-1 p-4 text-canvas-muted text-sm">
-          Charts coming in Task 7
-        </div>
-      </div>
+      <ChartPanel stateRef={stateRef} />
     </div>
   );
 }
