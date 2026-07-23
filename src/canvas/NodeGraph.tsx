@@ -1,16 +1,19 @@
 import { useRef, useEffect, useCallback } from 'react';
-import type { SimulationState, Particle } from '../types';
+import type { SimulationState, Particle, NodeKind, SimNode } from '../types';
 import { PARTICLE_SPEED } from '../types';
 import { tick } from '../simulation/engine';
 import { renderFrame } from './renderer';
-import { computeLayout } from './layout';
+import { computeLayout, findNodeAt } from './layout';
 
 interface Props {
   stateRef: React.MutableRefObject<SimulationState>;
   onRenderTick: () => void;
+  onNodeClick: (node: SimNode | null) => void;
+  onDrop: (kind: NodeKind, x: number, y: number) => void;
+  onContextMenu: (node: SimNode, x: number, y: number) => void;
 }
 
-export default function NodeGraph({ stateRef, onRenderTick }: Props) {
+export default function NodeGraph({ stateRef, onRenderTick, onNodeClick, onDrop, onContextMenu }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
   const lastTimeRef = useRef(0);
@@ -136,7 +139,32 @@ export default function NodeGraph({ stateRef, onRenderTick }: Props) {
   }, [stateRef, onRenderTick]);
 
   return (
-    <div ref={containerRef} className="w-full h-full">
+    <div
+      ref={containerRef}
+      className="w-full h-full"
+      onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
+      onDrop={e => {
+        e.preventDefault();
+        const kind = e.dataTransfer.getData('node-kind') as NodeKind;
+        if (!kind) return;
+        const rect = containerRef.current!.getBoundingClientRect();
+        onDrop(kind, e.clientX - rect.left, e.clientY - rect.top);
+      }}
+      onMouseDown={e => {
+        if (e.button === 2) return;
+        const rect = containerRef.current!.getBoundingClientRect();
+        const node = findNodeAt(stateRef.current.nodes, e.clientX - rect.left, e.clientY - rect.top);
+        onNodeClick(node ?? null);
+      }}
+      onContextMenu={e => {
+        e.preventDefault();
+        const rect = containerRef.current!.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        const node = findNodeAt(stateRef.current.nodes, mx, my);
+        if (node) onContextMenu(node, e.clientX, e.clientY);
+      }}
+    >
       <canvas ref={canvasRef} className="block" />
     </div>
   );
