@@ -5,6 +5,7 @@ import NodePalette from './NodePalette';
 import ControlPanel from './ControlPanel';
 import NodeConfigPopover from './NodeConfigPopover';
 import CodePanel from '../scripting/CodePanel';
+import InfraPanel from '../infra/InfraPanel';
 
 interface Props {
   stateRef: React.MutableRefObject<SimulationState>;
@@ -60,9 +61,7 @@ export default function Sidebar({
         )}
 
         {activeTab === 'deploy' && (
-          <div className="p-4 text-xs text-canvas-muted">
-            Deploy panel — Task 8
-          </div>
+          <InfraPanel stateRef={stateRef} />
         )}
       </div>
     </div>
