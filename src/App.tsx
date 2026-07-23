@@ -6,6 +6,7 @@ import { addNode, removeNode } from './canvas/interaction';
 import NodeGraph from './canvas/NodeGraph';
 import Sidebar from './sidebar/Sidebar';
 import ChartPanel from './charts/ChartPanel';
+import Toolbar from './toolbar/Toolbar';
 
 export default function App() {
   const stateRef = useRef<SimulationState>(createState(PRESETS[0]));
@@ -73,14 +74,7 @@ export default function App() {
       />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <div className="h-11 bg-canvas-surface backdrop-blur-[12px] border-b border-canvas-border flex items-center px-5 text-sm">
-          <span className="font-medium text-canvas-text">{PRESETS.find(p => p.id === currentPresetId)?.name ?? 'Custom'}</span>
-          <div className="ml-6 flex items-center gap-5 text-xs text-canvas-muted">
-            <span>Produced <span className="text-canvas-producer font-mono ml-1">{stateRef.current.counters.produced}</span></span>
-            <span>Consumed <span className="text-canvas-success font-mono ml-1">{stateRef.current.counters.consumed}</span></span>
-            <span>Failed <span className="text-canvas-dlq font-mono ml-1">{stateRef.current.counters.failed}</span></span>
-          </div>
-        </div>
+        <Toolbar stateRef={stateRef} currentPresetId={currentPresetId} />
         <div ref={canvasContainerRef} className="flex-1 relative bg-canvas-deep">
           <NodeGraph
             stateRef={stateRef}
