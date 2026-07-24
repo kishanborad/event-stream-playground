@@ -46,7 +46,9 @@ require_cmd() {
 version_gte() {
   # Returns 0 if $1 >= $2 (semver comparison)
   local IFS=.
-  local i ver1=($1) ver2=($2)
+  local i
+  read -ra ver1 <<< "$1"
+  read -ra ver2 <<< "$2"
   for ((i=${#ver1[@]}; i<${#ver2[@]}; i++)); do ver1[i]=0; done
   for ((i=0; i<${#ver1[@]}; i++)); do
     [[ -z "${ver2[i]+x}" ]] && ver2[i]=0

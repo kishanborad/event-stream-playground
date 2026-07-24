@@ -29,7 +29,7 @@ import uuid
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Callable, Iterator, Optional
+from typing import Any, Optional
 
 
 # ---------------------------------------------------------------------------
@@ -537,7 +537,6 @@ def run_benchmark(num_events: int = 10_000, target_rate: float = 5000.0) -> None
     broker.create_topic("bench-topic", TopicConfig(num_partitions=8))
 
     event_types = ["PageView", "Click", "MetricSample"]
-    interval = 1.0 / target_rate
 
     start = time.monotonic()
     last_report = start

@@ -15,10 +15,7 @@ from __future__ import annotations
 import asyncio
 import json
 import sys
-import time
 from pathlib import Path
-
-import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from load_generator import (

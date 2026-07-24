@@ -47,6 +47,7 @@ mkdir -p "$LOG_DIR"
 # ─────────────────────────────── Defaults ────────────────────────────────────
 RATE=25
 PARTITIONS=4
+# shellcheck disable=SC2034
 EVENT_TYPES="PageView Click Purchase Heartbeat MetricSample SensorReading"
 FRONTEND=true
 MODE="stream"   # "stream" or "kafka"

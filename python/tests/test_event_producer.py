@@ -27,7 +27,6 @@ from event_producer import (
     EventProducer,
     EventType,
     Partitioner,
-    RateLimiter,
     _PAYLOAD_FACTORIES,
     parse_args,
 )

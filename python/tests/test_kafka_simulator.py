@@ -16,7 +16,6 @@ Covers:
 from __future__ import annotations
 
 import sys
-import time
 from pathlib import Path
 
 import pytest
@@ -24,14 +23,11 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from kafka_simulator import (
     Acks,
-    ConsumerGroup,
-    ConsumerMember,
     IsolationLevel,
     KafkaBroker,
     LogEntry,
     PartitionLog,
     ProducerRecord,
-    Topic,
     TopicConfig,
 )
 
@@ -222,7 +218,7 @@ class TestPartitionAssignment:
 class TestConsumerGroupRebalance:
     def test_register_consumer_group(self):
         b = make_broker()
-        group = b.register_consumer_group("cg-1", ["test-topic"])
+        _group = b.register_consumer_group("cg-1", ["test-topic"])
         assert "cg-1" in b.consumer_groups
 
     def test_member_join_triggers_rebalance(self, capsys):
@@ -253,7 +249,7 @@ class TestConsumerGroupRebalance:
     def test_member_leave_triggers_rebalance(self):
         b = make_broker(num_partitions=4)
         group = b.register_consumer_group("cg-leave", ["test-topic"])
-        m1 = group.join("c-01")
+        _m1 = group.join("c-01")
         m2 = group.join("c-02")
         group.leave("c-01")
         # c-02 should now own all partitions
@@ -290,14 +286,14 @@ class TestOffsetManagement:
     def test_consumer_lag_is_zero_after_full_poll(self):
         b = make_broker(num_partitions=2)
         group = b.register_consumer_group("cg-lag", ["test-topic"])
-        member = group.join("c-01")
+        _member = group.join("c-01")
 
         # Produce 10 events
         for i in range(10):
             b.produce(make_record(key=f"user-{i % 2}"), partition_strategy="key")
 
         # Poll all
-        records = group.poll("c-01", max_records_per_partition=100)
+        _records = group.poll("c-01", max_records_per_partition=100)
 
         lag = group.consumer_lag()
         total_lag = sum(sum(p.values()) for p in lag.values())
