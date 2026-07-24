@@ -64,8 +64,18 @@ class LatencyBucket:
         if not self.samples:
             return 0.0
         sorted_s = sorted(self.samples)
-        idx = max(0, int(len(sorted_s) * p / 100) - 1)
-        return sorted_s[idx]
+        n = len(sorted_s)
+        if n == 1:
+            return sorted_s[0]
+        rank = p / 100.0 * (n - 1)
+        lo = int(rank)
+        if lo >= n - 1:
+            return sorted_s[-1]
+        hi = lo + 1
+        frac = rank - lo
+        if frac < 1e-9:
+            return sorted_s[lo]
+        return sorted_s[lo] + frac * (sorted_s[hi] - sorted_s[lo])
 
     def mean(self) -> float:
         return sum(self.samples) / len(self.samples) if self.samples else 0.0

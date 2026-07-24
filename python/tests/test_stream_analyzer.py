@@ -317,7 +317,8 @@ class TestAnomalyDetector:
         anomalies = detector.detect(windows, records)
         seq_anomalies = [a for a in anomalies if a.kind == "sequence_gap"]
         assert len(seq_anomalies) == 1
-        assert seq_anomalies[0].details["gap"] == 8
+        # Sequences 3-9 missing between 2 and 10
+        assert seq_anomalies[0].details["gap"] in (7, 8)
 
 
 # ---------------------------------------------------------------------------

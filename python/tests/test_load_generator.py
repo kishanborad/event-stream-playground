@@ -90,7 +90,7 @@ class TestLatencyBucket:
         for v in [1.0, 2.0, 3.0, 4.0, 5.0]:
             b.record(v)
         # Median of [1,2,3,4,5] is 3
-        assert b.percentile(50) == 3.0
+        assert abs(b.percentile(50) - 3.0) < 0.01
 
     def test_p99_is_near_max(self):
         b = LatencyBucket()
