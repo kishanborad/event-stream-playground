@@ -138,6 +138,7 @@ info "Starting event producer → $EVENT_LOG"
   --mode stdout \
   --rate "$RATE" \
   --partitions "$PARTITIONS" \
+  --event-types $EVENT_TYPES \
   --output-file "$EVENT_LOG" \
   2>"$LOG_DIR/producer.stderr" &
 
