@@ -7,3 +7,28 @@ dist
 coverage
 *.tsbuildinfo
 .superpowers
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+*.egg-info/
+*.egg
+build/
+*.whl
+
+# Test results
+.test-results/
+python/coverage.xml
+python/test-results.xml
+
+# Event logs (generated at runtime)
+python/tests/__pycache__/
+stream-report.html
+load-report.json

@@ -1,0 +1,175 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "feat/**", "fix/**", "chore/**"]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─────────────────────────────── Python Tests ───────────────────────────
+  python-tests:
+    name: Python tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    defaults:
+      run:
+        working-directory: python
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: python/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests with coverage
+        run: |
+          python -m pytest tests/ \
+            -v \
+            --tb=short \
+            --cov=. \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            --junitxml=test-results.xml
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: matrix.python-version == '3.12'
+        with:
+          name: python-coverage
+          path: python/coverage.xml
+          retention-days: 14
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: python-test-results-${{ matrix.python-version }}
+          path: python/test-results.xml
+          retention-days: 14
+
+  # ─────────────────────────────── Frontend ───────────────────────────────
+  frontend:
+    name: Frontend build + tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Run frontend tests
+        run: npx vitest run --reporter=verbose
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist/
+          retention-days: 7
+
+  # ─────────────────────────── Docker build verify ────────────────────────
+  docker-build:
+    name: Docker build verification
+    runs-on: ubuntu-latest
+    needs: [python-tests, frontend]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (test stage only)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          target: builder           # Runs tests during build
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: event-stream-playground:ci-${{ github.sha }}
+
+      - name: Build final runtime image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          target: runtime
+          push: false
+          cache-from: type=gha
+          tags: event-stream-playground:latest
+
+  # ─────────────────────────── Lint / code quality ────────────────────────
+  lint:
+    name: Python lint (ruff)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Run ruff (check only — no autofix in CI)
+        run: |
+          ruff check python/ \
+            --select E,W,F \
+            --ignore E501 \
+            --output-format=github
+
+  # ─────────────────────────── Shell script lint ──────────────────────────
+  shellcheck:
+    name: Shell script lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Lint Bash scripts
+        run: |
+          shellcheck scripts/*.sh \
+            --severity=warning \
+            --format=gcc

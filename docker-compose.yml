@@ -1,0 +1,173 @@
+version: "3.9"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Event-Stream Playground — Full local stack
+#
+# Services:
+#   producer   — generates events at 50 eps, writes JSON-lines to shared volume
+#   consumer   — reads the event log, filters, tracks offsets, logs metrics
+#   analyzer   — runs batch analytics on the event log, outputs HTML dashboard
+#
+# Volumes:
+#   event-logs — shared between producer, consumer, and analyzer
+#
+# Usage:
+#   docker compose up --build          # bring up all services
+#   docker compose up producer         # run only the producer
+#   docker compose logs -f consumer    # tail consumer logs
+#   docker compose down -v             # tear down + remove volumes
+# ─────────────────────────────────────────────────────────────────────────────
+
+x-python-base: &python-base
+  build:
+    context: .
+    dockerfile: Dockerfile
+    target: runtime
+  volumes:
+    - event-logs:/data/events
+  restart: unless-stopped
+  networks:
+    - stream-net
+  environment:
+    PYTHONUNBUFFERED: "1"
+    PYTHONDONTWRITEBYTECODE: "1"
+
+services:
+
+  # ─────────────────────────────── Producer ───────────────────────────────
+  producer:
+    <<: *python-base
+    container_name: esp-producer
+    image: event-stream-playground:latest
+    command:
+      - "--mode"
+      - "stdout"
+      - "--rate"
+      - "${EVENT_RATE:-50}"
+      - "--partitions"
+      - "${EVENT_PARTITIONS:-4}"
+      - "--output-file"
+      - "/data/events/stream.jsonl"
+      - "--count"
+      - "${EVENT_COUNT:-0}"          # 0 = unlimited; override to limit
+    environment:
+      EVENT_RATE: "${EVENT_RATE:-50}"
+      EVENT_PARTITIONS: "${EVENT_PARTITIONS:-4}"
+    ports:
+      - "8080:8080"                   # SSE endpoint (if mode switched to sse)
+    healthcheck:
+      test: ["CMD", "python", "-c", "import event_producer; print('ok')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # ─────────────────────────────── Consumer ───────────────────────────────
+  consumer:
+    <<: *python-base
+    container_name: esp-consumer
+    image: event-stream-playground:latest
+    entrypoint: ["python", "event_consumer.py"]
+    command:
+      - "--mode"
+      - "file"
+      - "--source"
+      - "/data/events/stream.jsonl"
+      - "--consumer-group"
+      - "${CONSUMER_GROUP:-analytics-group}"
+      - "--partitions"
+      - "${EVENT_PARTITIONS:-4}"
+      - "--stats-format"
+      - "json"
+    environment:
+      CONSUMER_GROUP: "${CONSUMER_GROUP:-analytics-group}"
+      EVENT_PARTITIONS: "${EVENT_PARTITIONS:-4}"
+    depends_on:
+      producer:
+        condition: service_healthy
+
+  # ─────────────────────────────── Analyzer ───────────────────────────────
+  analyzer:
+    <<: *python-base
+    container_name: esp-analyzer
+    image: event-stream-playground:latest
+    entrypoint: ["python", "stream_analyzer.py"]
+    command:
+      - "--input"
+      - "/data/events/stream.jsonl"
+      - "--output"
+      - "/data/events/report.html"
+      - "--window-type"
+      - "${WINDOW_TYPE:-tumbling}"
+      - "--window-size"
+      - "${WINDOW_SIZE:-10}"
+      - "--top-n"
+      - "6"
+    volumes:
+      - event-logs:/data/events
+      - analyzer-reports:/reports
+    environment:
+      WINDOW_TYPE: "${WINDOW_TYPE:-tumbling}"
+      WINDOW_SIZE: "${WINDOW_SIZE:-10}"
+    depends_on:
+      producer:
+        condition: service_healthy
+
+  # ─────────────────────────── Load Generator ─────────────────────────────
+  loadgen:
+    <<: *python-base
+    container_name: esp-loadgen
+    image: event-stream-playground:latest
+    entrypoint: ["python", "load_generator.py"]
+    command:
+      - "--pattern"
+      - "${LOAD_PATTERN:-steady}"
+      - "--rate"
+      - "${EVENT_RATE:-50}"
+      - "--duration"
+      - "${LOAD_DURATION:-60}"
+      - "--report-file"
+      - "/data/events/load-report.json"
+    environment:
+      LOAD_PATTERN: "${LOAD_PATTERN:-steady}"
+      LOAD_DURATION: "${LOAD_DURATION:-60}"
+    profiles:
+      - loadtest              # Only start with: docker compose --profile loadtest up
+    depends_on:
+      - producer
+
+  # ─────────────────────────── Kafka Simulator ────────────────────────────
+  kafka-sim:
+    <<: *python-base
+    container_name: esp-kafka-sim
+    image: event-stream-playground:latest
+    entrypoint: ["python", "kafka_simulator.py"]
+    command:
+      - "demo"
+      - "--topics"
+      - "3"
+      - "--partitions"
+      - "4"
+      - "--consumers"
+      - "3"
+      - "--events"
+      - "500"
+    profiles:
+      - demo                  # Only start with: docker compose --profile demo up
+
+volumes:
+  event-logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: "${EVENT_LOG_PATH:-/tmp/esp-event-logs}"
+  analyzer-reports:
+    driver: local
+
+networks:
+  stream-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "172.28.0.0/16"
