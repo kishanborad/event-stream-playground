@@ -103,6 +103,10 @@ src/
   App.tsx             # Root component
 ```
 
+## AI tools
+
+Built with [Claude Code](https://claude.ai/code) as the AI copilot for code generation, agent-driven development, and automated testing workflows.
+
 ## Author
 
 Kishan Borad
