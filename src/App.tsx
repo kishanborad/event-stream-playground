@@ -7,6 +7,7 @@ import NodeGraph from './canvas/NodeGraph';
 import Sidebar from './sidebar/Sidebar';
 import ChartPanel from './charts/ChartPanel';
 import Toolbar from './toolbar/Toolbar';
+import { ProblemBanner } from './ProblemBanner';
 
 export default function App() {
   const stateRef = useRef<SimulationState>(createState(PRESETS[0]));
@@ -61,10 +62,12 @@ export default function App() {
 
   return (
     <div
-      className="flex h-screen bg-canvas-bg text-canvas-text overflow-hidden"
+      className="flex flex-col h-screen bg-canvas-bg text-canvas-text overflow-hidden"
       onClick={() => setContextMenu(null)}
     >
-      <Sidebar
+      <ProblemBanner />
+      <div className="flex flex-1 min-h-0">
+        <Sidebar
         stateRef={stateRef}
         selectedNode={selectedNode}
         onClearSelection={() => setSelectedNode(null)}
@@ -102,6 +105,7 @@ export default function App() {
       </div>
 
       <ChartPanel stateRef={stateRef} />
+      </div>
     </div>
   );
 }
