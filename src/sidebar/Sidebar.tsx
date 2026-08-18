@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import type { SimulationState, SimNode, PresetConfig } from '../types';
 import TabBar, { type SidebarTab } from './TabBar';
 import NodePalette from './NodePalette';
 import ControlPanel from './ControlPanel';
 import NodeConfigPopover from './NodeConfigPopover';
-import CodePanel from '../scripting/CodePanel';
-import InfraPanel from '../infra/InfraPanel';
+
+const CodePanel = lazy(() => import('../scripting/CodePanel'));
+const InfraPanel = lazy(() => import('../infra/InfraPanel'));
 
 interface Props {
   stateRef: React.MutableRefObject<SimulationState>;
@@ -53,15 +54,19 @@ export default function Sidebar({
         )}
 
         {activeTab === 'code' && (
-          <CodePanel
-            stateRef={stateRef}
-            currentPresetId={currentPresetId}
-            canvasSize={canvasSize}
-          />
+          <Suspense fallback={<div className="p-4 text-canvas-muted text-xs">Loading editor...</div>}>
+            <CodePanel
+              stateRef={stateRef}
+              currentPresetId={currentPresetId}
+              canvasSize={canvasSize}
+            />
+          </Suspense>
         )}
 
         {activeTab === 'deploy' && (
-          <InfraPanel stateRef={stateRef} />
+          <Suspense fallback={<div className="p-4 text-canvas-muted text-xs">Loading...</div>}>
+            <InfraPanel stateRef={stateRef} />
+          </Suspense>
         )}
       </div>
     </div>
